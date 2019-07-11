@@ -595,6 +595,14 @@ class RunCat(PipelineWrapperTask):
             else:
                 if not tools.fileOps.dir_is_writeable(d):
                     raise UserException('Directory {} is not writeable.'.format(d))
+        if pipeline_args.binary_mode == 'singularity':
+            # singularity puts image in CWD, so change CWD to work_dir and back
+            current_cwd = os.getcwd()
+            os.chdir(pipeline_args.work_dir)
+            check_call(['singularity', 'pull', '--name', 'cat.img',
+                'docker://quay.io/ucsc_cgl/cat:latest'])
+            os.chdir(current_cwd)
+
         if not os.path.exists(pipeline_args.annotation):
             raise InputMissingException('Annotation file {} not found.'.format(pipeline_args.annotation))
         # TODO: validate augustus species, tm/tmr/cgp/param files.
