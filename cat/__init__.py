@@ -203,6 +203,19 @@ class PipelineTask(luigi.Task):
         # flags for figuring out which genomes we are going to annotate
         args.set('annotate_ancestors', self.annotate_ancestors, True)
 
+        # get the Docker/Singularity image set up, if applicable, because we
+        # will need it to run halStats.
+        if args.binary_mode == 'docker':
+            # Update docker container
+            check_call(['docker', 'pull', 'quay.io/ucsc_cgl/cat:latest'])
+        elif args.binary_mode == 'singularity':
+            # singularity puts image in CWD, so change CWD to work_dir and back
+            current_cwd = os.getcwd()
+            os.chdir(args.work_dir)
+            check_call(['singularity', 'pull', '--name', 'cat.img',
+                'docker://quay.io/ucsc_cgl/cat:latest'])
+            os.chdir(current_cwd)
+
         # halStats is run below, before any validate() methods are called.
         if not tools.misc.is_exec('halStats'):
             raise ToolMissingException('halStats from the HAL tools package not in global path')
@@ -583,9 +596,6 @@ class RunCat(PipelineWrapperTask):
     """
     def validate(self, pipeline_args):
         """General input validation"""
-        if pipeline_args.binary_mode == 'docker':
-            # Update docker container
-            check_call(['docker', 'pull', 'quay.io/ucsc_cgl/cat:latest'])
         if not os.path.exists(pipeline_args.hal):
             raise InputMissingException('HAL file not found at {}.'.format(pipeline_args.hal))
         for d in [pipeline_args.out_dir, pipeline_args.work_dir]:
@@ -595,13 +605,6 @@ class RunCat(PipelineWrapperTask):
             else:
                 if not tools.fileOps.dir_is_writeable(d):
                     raise UserException('Directory {} is not writeable.'.format(d))
-        if pipeline_args.binary_mode == 'singularity':
-            # singularity puts image in CWD, so change CWD to work_dir and back
-            current_cwd = os.getcwd()
-            os.chdir(pipeline_args.work_dir)
-            check_call(['singularity', 'pull', '--name', 'cat.img',
-                'docker://quay.io/ucsc_cgl/cat:latest'])
-            os.chdir(current_cwd)
 
         if not os.path.exists(pipeline_args.annotation):
             raise InputMissingException('Annotation file {} not found.'.format(pipeline_args.annotation))
