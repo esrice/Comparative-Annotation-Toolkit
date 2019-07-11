@@ -211,14 +211,12 @@ class PipelineTask(luigi.Task):
             # Update docker container
             check_call(['docker', 'pull', 'quay.io/ucsc_cgl/cat:latest'])
         elif args.binary_mode == 'singularity':
-            # singularity puts image in CWD, so change CWD to work_dir and back
-            current_cwd = os.getcwd()
-            os.chdir(args.work_dir)
             if not tools.misc.is_exec('singularity'):
                 raise ToolMissingException('singularity binary not found. Either install it or use a different option for --binary-mode.')
+            os.environ['SINGULARITY_PULLFOLDER'] = args.work_dir
+            os.environ['SINGULARITY_CACHEDIR'] = args.work_dir
             check_call(['singularity', 'pull', '--name', 'cat.img',
                 'docker://quay.io/ucsc_cgl/cat:latest'])
-            os.chdir(current_cwd)
 
         # halStats is run below, before any validate() methods are called.
         if not tools.misc.is_exec('halStats'):
