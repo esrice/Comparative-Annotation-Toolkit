@@ -206,12 +206,16 @@ class PipelineTask(luigi.Task):
         # get the Docker/Singularity image set up, if applicable, because we
         # will need it to run halStats.
         if args.binary_mode == 'docker':
+            if not tools.misc.is_exec('docker'):
+                raise ToolMissingException('docker binary not found. Either install it or use a different option for --binary-mode.')
             # Update docker container
             check_call(['docker', 'pull', 'quay.io/ucsc_cgl/cat:latest'])
         elif args.binary_mode == 'singularity':
             # singularity puts image in CWD, so change CWD to work_dir and back
             current_cwd = os.getcwd()
             os.chdir(args.work_dir)
+            if not tools.misc.is_exec('singularity'):
+                raise ToolMissingException('singularity binary not found. Either install it or use a different option for --binary-mode.')
             check_call(['singularity', 'pull', '--name', 'cat.img',
                 'docker://quay.io/ucsc_cgl/cat:latest'])
             os.chdir(current_cwd)
