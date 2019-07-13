@@ -13,14 +13,12 @@ def get_tree(hal):
     :param hal: HAL file.
     :return: Tree object
     """
-    if os.environ['CAT_BINARY_MODE'] == 'docker':
-        cmd = ['halStats', '--tree', hal] # TODO dockerize this
-    elif os.environ['CAT_BINARY_MODE'] == 'singularity':
+    # file locking may not be allowed inside singularity
+    # containers, so turn it off
+    if os.environ['CAT_BINARY_MODE'] == 'singularity':
         os.environ['SINGULARITYENV_HDF5_USE_FILE_LOCKING'] = 'FALSE'
-        cmd = ['singularity', 'exec', '-B', '/:/mnt', os.path.join(os.environ['SINGULARITY_PULLFOLDER'], 'cat.img'),
-                'halStats', '--tree', '/mnt/' + hal]
-    else: # 'local' binary mode
-        cmd = ['halStats', '--tree', hal]
+
+    cmd = ['halStats', '--tree', hal]
 
     newick = call_proc_lines(cmd)[0]
     return ete3.Tree(newick, format=1)
