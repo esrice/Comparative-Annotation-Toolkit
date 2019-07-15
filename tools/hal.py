@@ -13,11 +13,6 @@ def get_tree(hal):
     :param hal: HAL file.
     :return: Tree object
     """
-    # file locking may not be allowed inside singularity
-    # containers, so turn it off
-    if os.environ['CAT_BINARY_MODE'] == 'singularity':
-        os.environ['SINGULARITYENV_HDF5_USE_FILE_LOCKING'] = 'FALSE'
-
     cmd = ['halStats', '--tree', hal]
 
     newick = call_proc_lines(cmd)[0]
